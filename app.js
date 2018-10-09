@@ -4,7 +4,9 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
 const app = express();
-const databseUrl = 'mongodb://localhost:27017/artGallery'
+const userRoute = require('./routes/users');
+const apiSource = '/api/v1';
+const databseUrl = 'mongodb://localhost:27017/artGallery';
 
 mongoose.connect(databseUrl, {
 	useNewUrlParser: true
@@ -28,11 +30,7 @@ app.use((req, res, next) => {
 	next();
 })
 
-app.get('/users', (req, res, next) => {
-	res.status(200).json({
-		message: 'connected successfully'
-	})
-});
+app.use(apiSource + '/users', userRoute);
 
 /* Error Handling */
 app.use((req, res, next) => {
