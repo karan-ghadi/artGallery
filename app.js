@@ -5,11 +5,13 @@ const bodyParser = require('body-parser');
 
 const app = express();
 const userRoute = require('./routes/users');
+const productRoute = require('./routes/products');
 const apiSource = '/api/v1';
 const databseUrl = 'mongodb://localhost:27017/artGallery';
 
 mongoose.connect(databseUrl, {
-	useNewUrlParser: true
+	useNewUrlParser: true,
+	useCreateIndex: true
 });
 
 app.use(morgan('dev'));
@@ -31,6 +33,7 @@ app.use((req, res, next) => {
 })
 
 app.use(apiSource + '/users', userRoute);
+app.use(apiSource + '/products', productRoute);
 
 /* Error Handling */
 app.use((req, res, next) => {
