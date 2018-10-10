@@ -4,7 +4,7 @@ const User = require('../models/user');
 const router = express.Router();
 
 //** error function */
-const getError = (e) => {
+const catchError = (e) => {
 	res.status(404).json({
 		message: e,
 	});
@@ -12,18 +12,17 @@ const getError = (e) => {
 
 //** get all users */
 const getAllUsers = (req, res, next) => {
-
 	User.find().exec().then((result) => {
-		onGetUser(result);
+		getUserData(result);
 	}).catch((err) => {
-		getError(err);
+		catchError(err);
 	});
 
-	const onGetUser = (d) => {
-		(!d) ? res.status(404).json({
-			message: 'No user data'
-		}): res.status(200).json({
-			message: 'Get All Uers',
+	const getUserData = (d) => {
+		(d == '' || !d) ? res.status(404).json({
+			message: 'No user data',
+		}) : res.status(200).json({
+			message: 'users successfully fetched',
 			users: d
 		})
 	}
@@ -31,19 +30,21 @@ const getAllUsers = (req, res, next) => {
 
 //**  get single user */
 const getOneUser = (req, res, next) => {
+
 	const uname = req.params.username;
+
 	User.findOne({
 		username: uname
 	}).exec().then(result => {
-		onGetUser(result);
+		getUserData(result);
 	}).catch((err) => {
-		getError(err);
+		catchError(err);
 	});
 
-	const onGetUser = (d) => {
+	const getUserData = (d) => {
 		(!d) ? res.status(200).json({
 			message: 'user not found'
-		}): res.status(200).json({
+		}) : res.status(200).json({
 			userData: d,
 			message: 'get single user'
 		});
@@ -64,20 +65,20 @@ const addUser = (req, res, next) => {
 	});
 
 	User.findOne({
-			username: data.username
-		})
+		username: data.username
+	})
 		.exec()
 		.then(result => {
-			onAddUser(result);
+			addUserData(result);
 		}).catch((err) => {
-			getError(err);
+			catchError(err);
 		});
 
-	const onAddUser = (d) => {
+	const addUserData = (d) => {
 		(d) ? res.status(200).json({
 			user: user,
 			message: 'username already exits'
-		}): user.save().then(sucess => {
+		}) : user.save().then(sucess => {
 			res.status(200).json({
 				user: sucess,
 				message: 'user successfully added'
@@ -91,28 +92,28 @@ const deleteUser = (req, res, next) => {
 	const uname = req.params.username;
 
 	User.findOne({
-			username: uname
-		})
+		username: uname
+	})
 		.exec()
 		.then(result => {
-			onDeletUser(result)
+			deletUserData(result)
 		}).catch((err) => {
-			getError(err);
+			catchError(err);
 		});
 
-	const onDeletUser = (d) => {
+	const deletUserData = (d) => {
 		(!d) ? res.status(200).json({
-				message: 'user not found'
-			}):
+			message: 'user not found'
+		}) :
 			User.deleteOne({
 				username: uname
 			})
-			.exec()
-			.then(d => {
-				res.status(200).json({
-					message: 'user deleted'
+				.exec()
+				.then(d => {
+					res.status(200).json({
+						message: 'user deleted'
+					});
 				});
-			});
 	}
 }
 
@@ -121,21 +122,21 @@ const deleteUser = (req, res, next) => {
 const updateUser = (req, res, next) => {
 	const uname = req.params.username;
 	User.findOne({
-			username: uname
-		})
+		username: uname
+	})
 		.exec()
 		.then(result => {
-			onUpdateUser(result)
+			updateUserData(result)
 		}).catch((err) => {
-			getError(err);
+			catchError(err);
 		});
 
-	const onUpdateUser = (d) => {
+	const updateUserData = (d) => {
 		(!d) ? res.status(200).json({
-				message: 'user not found'
-			}): User.updateOne({
-				username: uname
-			}, {
+			message: 'user not found'
+		}) : User.updateOne({
+			username: uname
+		}, {
 				firstname: req.body.firstname,
 				lastname: req.body.lastname,
 				password: req.body.password
