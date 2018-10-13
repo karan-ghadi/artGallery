@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const userRoute = require('./routes/users');
 const productRoute = require('./routes/products');
+const orderRoute = require('./routes/orders');
 const apiSource = '/api/v1';
 const databseUrl = 'mongodb://localhost:27017/artGallery';
 
@@ -34,6 +35,7 @@ app.use((req, res, next) => {
 
 app.use(apiSource + '/users', userRoute);
 app.use(apiSource + '/products', productRoute);
+app.use(apiSource + '/orders', orderRoute);
 
 /* Error Handling */
 app.use((req, res, next) => {
