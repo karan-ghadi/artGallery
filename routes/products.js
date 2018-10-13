@@ -4,36 +4,37 @@ const Product = require('../models/product');
 const router = express.Router();
 
 const getAllProducts = (req, res, next) => {
-  Product.find()
-    .exec()
-    .then(result => {
-      productQuery(result);
-    })
-    .catch(err => {
-      catchError(err);
-    });
 
-  const productQuery = data => {
-    (!data || data == '') ? res.status(201).json({
-      message: 'no product found'
-    }): res.status(201).json({
-      product: data,
-      message: 'products successfully fetched'
+  const getProducts = () => {
+    Product.find()
+    .exec()
+    .then((result) =>  (!result.length) ? catchError({ code: 'nf' }) : res.status(500).json({ products : result }) )
+    .catch((err) =>  catchError({ code: 'sww' }) );
+  }
+
+  //** error function */
+  const catchError = (err) => {
+    const errors = [
+      { code: 'sww' , message: 'something went wrong' },
+      { code: 'nf' , message: 'products not found' },
+    ];
+
+    errors.filter(error => err.code === error.code).map(error => {
+      res.status(500).json({
+        code: error.code,
+        message: error.message
+      });
     });
-  };
-  const catchError = err => {
-    res.status(404).json({
-      message: err
-    });
-  };
+  }
+  
+
+  getProducts();
 };
 
 //** get single product */
 const getSingleProduct = (req, res, next) => {
   const productId = req.params.id;
-  Product.findOne({
-      _id: productId
-    })
+  Product.findOne({ _id: productId })
     .exec()
     .then(result => {
       productQuery(result);
@@ -44,7 +45,7 @@ const getSingleProduct = (req, res, next) => {
   const productQuery = data => {
     (!data) ? res.status(404).json({
       message: 'no product found'
-    }): res.status(201).json({
+    }) : res.status(201).json({
       product: data
     });
   };
@@ -68,8 +69,8 @@ const addProducts = (req, res, next) => {
   });
 
   (!(product.name && product.description && product.price && product.quantity)) ? res.status(404).json({
-      message: 'please fill all the product details'
-    }): product
+    message: 'please fill all the product details'
+  }) : product
     .save()
     .then(result => {
       res.status(201).json({
@@ -92,8 +93,8 @@ const updateProducts = (req, res, next) => {
   const productId = req.params.id;
   const reqBody = req.body;
   Product.findOne({
-      _id: productId
-    })
+    _id: productId
+  })
     .exec()
     .then(result => {
       productQuery(result);
@@ -104,8 +105,8 @@ const updateProducts = (req, res, next) => {
 
   const productQuery = data => {
     Product.updateOne({
-        _id: data
-      }, {
+      _id: data
+    }, {
         name: reqBody.name,
         description: reqBody.description,
         price: reqBody.price,
@@ -131,8 +132,8 @@ const deleteProducts = (req, res, next) => {
   const productId = req.params.id;
 
   Product.findOne({
-      _id: productId
-    })
+    _id: productId
+  })
     .exec()
     .then(result => {
       productQuery(result.id);
@@ -143,10 +144,10 @@ const deleteProducts = (req, res, next) => {
 
   const productQuery = data => {
     (!data) ? res.status(404).json({
-        message: 'product not found'
-      }): Product.deleteOne({
-        _id: d
-      })
+      message: 'product not found'
+    }) : Product.deleteOne({
+      _id: d
+    })
       .exec()
       .then(d => {
         res.status(201).json({
