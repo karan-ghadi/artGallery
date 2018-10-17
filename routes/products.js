@@ -8,15 +8,15 @@ const getAllProducts = (req, res, next) => {
   const getProducts = () => {
     Product.find()
     .exec()
-    .then((result) =>  (!result.length) ? catchError({ code: 'nf' }) : res.status(500).json({ products : result }) )
-    .catch((err) =>  catchError({ code: 'sww' }) );
+    .then((result) =>  (!result.length) ? catchError({ code: 'NF' }) : res.status(200).json({ products : result }) )
+    .catch((err) =>  catchError({ code: 'SWW' }) );
   }
 
   //** error function */
   const catchError = (err) => {
     const errors = [
-      { code: 'sww' , message: 'something went wrong' },
-      { code: 'nf' , message: 'products not found' },
+      { code: 'SWW' , message: 'something went wrong' },
+      { code: 'NF' , message: 'products not found' },
     ];
 
     errors.filter(error => err.code === error.code).map(error => {
@@ -26,66 +26,90 @@ const getAllProducts = (req, res, next) => {
       });
     });
   }
-  
 
   getProducts();
 };
 
 //** get single product */
 const getSingleProduct = (req, res, next) => {
-  const productId = req.params.id;
-  Product.findOne({ _id: productId })
+  const state = req.params;
+
+  const findProduct = (state) => {
+    Product.findById(state.id)
     .exec()
-    .then(result => {
-      productQuery(result);
-    })
-    .catch(err => {
-      catchError(err);
+    .then((result) => { (!result) ? catchError({ code: 'NF' }) : getProduct(result) })
+    .catch((err) =>  catchError({ code: 'SWW' }) );
+  }
+
+  const getProduct = (state) => {
+    res.status(200).json({ message: 'Product Found', product: state });
+  }
+
+  //** error function */
+  const catchError = (err) => {
+    const errors = [
+      { code: 'SWW' , message: 'something went wrong' },
+      { code: 'NF' , message: 'products not found' },
+    ];
+
+    errors.filter(error => err.code === error.code).map(error => {
+      res.status(500).json({
+        code: error.code,
+        message: error.message
+      });
     });
-  const productQuery = data => {
-    (!data) ? res.status(404).json({
-      message: 'no product found'
-    }) : res.status(201).json({
-      product: data
-    });
-  };
-  const catchError = err => {
-    res.status(404).json({
-      message: err
-    });
-  };
+  }
+
+  findProduct(state);
 };
 
 //** add single product */
 
 const addProducts = (req, res, next) => {
-  const reqBody = req.body;
-  const product = new Product({
-    _id: new mongoose.Types.ObjectId(),
-    name: reqBody.name,
-    description: reqBody.description,
-    price: reqBody.price,
-    quantity: reqBody.quantity
-  });
+  const state = req.body;
 
-  (!(product.name && product.description && product.price && product.quantity)) ? res.status(404).json({
-    message: 'please fill all the product details'
-  }) : product
-    .save()
-    .then(result => {
-      res.status(201).json({
-        name: result
-      });
+  const checkValidation = (state) => {
+    (!state.name || !state.description || !state.price || !state.quantity) ? catchError({ code: 'MII' }) : checkProduct(state)
+  }
+
+  const checkProduct = (state) => {
+    Product.findOne({ name: state.name })
+    .exec()
+    .then((result) => { (result) ? catchError({ code: 'AE'}) : addProduct(state); });
+  }
+
+  const addProduct = (state) => {
+    const product = new Product({
+      _id: new mongoose.Types.ObjectId(),
+      name: state.name,
+      description: state.description,
+      price: state.price,
+      quantity: state.quantity
     })
-    .catch(err => {
-      catchError(err);
-    });
 
-  const catchError = err => {
-    res.status(404).json({
-      message: err
+    product.save()
+    .then((result) => { res.status(201).json({ message: result }) })
+    .catch((err) => { catchError({ code: 'SWW' }) });
+
+  }
+
+  //** error function */
+  const catchError = (err) => {
+    const errors = [
+      { code: 'SWW' , message: 'something went wrong' },
+      { code: 'MII' , message: 'missing important information' },
+      { code: 'AE' , message: 'product alredy exists' },
+    ];
+
+    errors.filter(error => err.code === error.code).map(error => {
+      res.status(500).json({
+        code: error.code,
+        message: error.message
+      });
     });
-  };
+  }
+
+  checkValidation(state);
 };
 
 //** update product */
