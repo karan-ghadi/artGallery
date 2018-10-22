@@ -8,9 +8,11 @@ const getAllUsers = (req, res, next) => {
 
   const getUser = () => {
     User.find()
-      .exec()
-      .then((result) => { (result.length <= 0) ? catchError({ code: 'NF' }) : res.status(200).json({ message: 'user found', user: result }) })
-      .catch((err) =>  catchError({ code : 'SWW' }) );
+    .exec()
+    .then((result) => {
+      (result.length <= 0) ? catchError({ code: 'NF' }) : res.status(200).json({ message: 'user found', user: result })
+    })
+    .catch((err) =>  catchError({ code : 'SWW' }) );
   }
 
   //** error function */
