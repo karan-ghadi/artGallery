@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
 	_id: mongoose.Schema.Types.ObjectId,
-	userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-	productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
-	trackingId : { type: mongoose.Schema.Types.ObjectId, ref: 'Tracking' },
+	user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+	tracking : { type: mongoose.Schema.Types.ObjectId, ref: 'Tracking' },
+	product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
 	quantity: { type: String, required: true, default: '1' },
 	amount: { type: Number, required: true }
 }, {

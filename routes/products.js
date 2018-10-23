@@ -10,7 +10,7 @@ const getAllProducts = (req, res, next) => {
     .select('name description price quantity')
     .exec()
       .then((result) => {
-        (!result.length) ? catchError({ code: 'NF' }) : res.status(200).json({
+        (!result.length) ? catchError({ code: 'PNF' }) : res.status(200).json({
           count: result.length,
           products: result.map(result => {
             return { id: result._id, name: result.name, description: result.description, price: result.price, quantity: result.quantity
@@ -25,7 +25,7 @@ const getAllProducts = (req, res, next) => {
   const catchError = (err) => {
     const errors = [
       { code: 'SWW' , message: 'something went wrong' },
-      { code: 'NF' , message: 'products not found' },
+      { code: 'PNF' , message: 'products not found' },
     ];
 
     errors.filter(error => err.code === error.code).map(error => {
@@ -59,7 +59,7 @@ const getSingleProduct = (req, res, next) => {
   const catchError = (err) => {
     const errors = [
       { code: 'SWW' , message: 'something went wrong' },
-      { code: 'NF' , message: 'products not found' },
+      { code: 'PNF' , message: 'products not found' },
     ];
 
     errors.filter(error => err.code === error.code).map(error => {
@@ -85,7 +85,7 @@ const addProducts = (req, res, next) => {
   const checkProduct = (state) => {
     Product.findOne({ name: state.name })
     .exec()
-    .then((result) => { (result) ? catchError({ code: 'AE'}) : addProduct(state); });
+    .then((result) => { (result) ? catchError({ code: 'PAE'}) : addProduct(state); });
   }
 
   const addProduct = (state) => {
@@ -108,7 +108,7 @@ const addProducts = (req, res, next) => {
     const errors = [
       { code: 'SWW' , message: 'something went wrong' },
       { code: 'MII' , message: 'missing important information' },
-      { code: 'AE' , message: 'product alredy exists' },
+      { code: 'PAE' , message: 'product alredy exists' },
     ];
 
     errors.filter(error => err.code === error.code).map(error => {
@@ -131,7 +131,7 @@ const updateProducts = (req, res, next) => {
     Product.findById(productId)
     .exec()
     .then((result) => {
-        (result) ? checkValidation(state) : catchError({code: 'NF'})
+        (result) ? checkValidation(state) : catchError({code: 'PNF'})
     })
   }
 
@@ -140,7 +140,7 @@ const updateProducts = (req, res, next) => {
   }
 
   const updateProduct = (state) => {
-    Product.updateOne({ _id: productId }, {
+    Product.findByIdAndUpdate(productId , {
       name: state.name,
       description: state.description,
       price: state.price,
@@ -156,8 +156,7 @@ const updateProducts = (req, res, next) => {
     const errors = [
       { code: 'SWW' , message: 'something went wrong' },
       { code: 'MII' , message: 'missing important information' },
-      { code: 'AE' , message: 'product already exists' },
-      { code: 'NF' , message: 'product not found' },
+      { code: 'PNF' , message: 'product not found' },
     ];
 
     errors.filter(error => err.code === error.code).map(error => {
@@ -180,12 +179,12 @@ const deleteProducts = (req, res, next) => {
     Product.findById(productId)
     .exec()
     .then((result) => {
-        (result) ? deleteProduct(state) : catchError({code: 'NF'})
+        (result) ? deleteProduct(state) : catchError({code: 'PNF'})
     })
   }
 
   const deleteProduct = (state) => {
-    Product.deleteOne({ _id: productId })
+    Product.findByIdAndDelete(productId)
     .exec()
     .then((result) => { res.status(201).json({ message: 'product deleted successfully' }) })
     .catch((err) => { res.status(500).json({ message: err }) });
@@ -197,8 +196,7 @@ const deleteProducts = (req, res, next) => {
     const errors = [
       { code: 'SWW' , message: 'something went wrong' },
       { code: 'MII' , message: 'missing important information' },
-      { code: 'AE' , message: 'product already exists' },
-      { code: 'NF' , message: 'product not found' },
+      { code: 'PNF' , message: 'product not found' },
     ];
 
     errors.filter(error => err.code === error.code).map(error => {

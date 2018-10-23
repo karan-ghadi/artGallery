@@ -9,86 +9,101 @@ const router = express.Router();
 
 const getAllOrders = (req, res, next) => {
 
-	Order.find()
+	const getOrders = () => {
+		Order.find()
+		.select('_id tracking quantity name amount')
+		.populate('user','username')
+		.populate('product', 'name')
 		.exec()
 		.then((result) => {
-			orderQuery(result);
-		}).catch((err) => {
-			catchError(err);
-		});
+			(result.length <= 0) ? catchError({ code: 'NF' }) : res.status(200).json({
+				count: result.length,
+				orders: result
+			});
+		})
+		.catch((err) => { res.status(500).json({ error: err }); });
+	}
 
-	const orderQuery = (data) => {
-		(!data || data == '') ? res.status(404).json({
-			message: 'no orders found'
-		}): res.status(201).json({
-			orders: result,
-			message: 'orders successfully fetched'
+	//** error function */
+	const catchError = (err) => {
+		const errors = [
+			{ code: 'SWW', message: 'something went wrong' },
+			{ code: 'NF', message: 'orders not found' }
+		];
+
+		errors.filter(error => err.code === error.code).map(error => {
+			res.status(500).json({ code: error.code, message: error.message });
 		})
 	}
 
-	const catchError = err => {
-		res.status(404).json({
-			message: err
-		});
-	};
-
+	getOrders();
 }
 
 
 const getOrder = (req, res, next) => {
-	const orderId = req.params.id;
-	Order.findOne({
-			_id: orderId
-		})
+	const state = req.params
+
+	const checkOrder = (state) => {
+		Order.findById(state.id)
+		.select('_id tracking quantity name amount')
+		.populate('user','username')
+		.populate('product', 'name')
 		.exec()
 		.then((result) => {
-			console.log('result ' + result);
-			res.status(201).json({
-				order: result,
-				message: 'get single order'
-			})
-		}).catch((err) => {
-			catchError(err);
+			(!result) ? catchError({ code: 'NF' }) : res.status(200).json({
+				message: result
+			});
+		})
+		.catch((err) => {
+			console.log(err)
+			res.status(500).json({ error: err });
 		});
+	}
 
-	const catchError = err => {
-		res.status(404).json({
-			message: 'something went wrong',
-			err: err
-		});
-	};
+	//** error function */
+	const catchError = (err) => {
+		const errors = [
+			{ code: 'SWW', message: 'something went wrong' },
+			{ code: 'NF', message: 'order not found' }
+		];
 
+		errors.filter(error => err.code === error.code).map(error => {
+			res.status(500).json({ code: error.code, message: error.message });
+		})
+	}
+
+	checkOrder(state);
 }
 
 
 const addOrders = (req, res, next) => {
 	const state = req.body;
 
-	const checkUser = (params) => {
-		User.findById(state.userId)
+	const checkUser = (state) => {
+
+		User.findOne({ _id :state.user })
 		.exec()
-		.then((result) => { (!result) ? catchError({ code: 'UNF' }) : checkProduct(state) });
+		.then((user) => { (!user) ? catchError({ code: 'UNF' }) : checkProduct(state) });
 	}
 
 	const checkProduct = (state) => {
-		Product.findById(state.productId)
+		Product.findOne({ _id: state.product })
 		.exec()
-		.then((result) => { (!result) ? catchError({ code: 'PNF' }) : addOrder(state) });
+		.then((product) => { (!product) ? catchError({ code: 'PNF' }) : addOrder(state) });
 	}
 
 	const addOrder = (state) => {
 		const order = new Order({
 			_id: new mongoose.Types.ObjectId(),
-			trackingId: new mongoose.Types.ObjectId(),
-			userId: state.userId,
-			productId: state.productId,
+			tracking: new mongoose.Types.ObjectId(),
+			user: state.user,
+			product: state.product,
 			quantity: state.quantity,
 			amount: state.amount
 		});
-
 		order.save()
-		.then((result) => { res.status(201).json({ message: 'order successfully placed', orderId: result._id, trackingId: result.trackingId }) })
-		.catch((err) => { res.status(400).json({ message: err}) });
+		.then((result) => { res.status(201).json({ message: 'order successfully placed', orderId: result._id, tracking: result.tracking }) })
+		.catch((err) => { res.status(500).json({ error: err}) });
 	}
 
 	//** error function */
@@ -106,18 +121,88 @@ const addOrders = (req, res, next) => {
 
 	checkUser(state);
 }
-// product id: 5bcd6e9789c5571b1840521c
-// user id: 5bbc88a2edd5362b4453a10d
+// product id: 5bc03701abd23c2a189835b6
+
+const updateOrders = (req, res, next) => {
+	const orderId = req.params.id;
+  const state = req.body;
+
+  const findProduct = (state) => {
+    Order.findById(orderId)
+    .exec()
+		.then((result) => {
+			(result) ? checkValidation(state) : catchError({ code: 'NF' })
+		})
+  }
+
+  const checkValidation = (state) => {
+    (!state.quantity || !state.amount ) ? catchError({ code: 'MII' }) : updateOrder(state)
+  }
+
+  const updateOrder = (state) => {
+    Order.findByIdAndUpdate(orderId , {
+      quantity: state.quantity,
+			amount: state.amount
+    })
+    .exec()
+		.then((result) => {
+			res.status(201).json({ message: 'Order updated successfully'})
+		})
+    .catch((err) => { res.status(500).json({ message: err }) });
+
+  }
+  //** error function */
+  const catchError = (err) => {
+    const errors = [
+      { code: 'SWW' , message: 'something went wrong' },
+      { code: 'MII' , message: 'missing important information' },
+      { code: 'AE' , message: 'product already exists' },
+      { code: 'NF' , message: 'product not found' },
+    ];
+
+    errors.filter(error => err.code === error.code).map(error => {
+      res.status(500).json({
+        code: error.code,
+        message: error.message
+      });
+    });
+  }
+
+  findProduct(state);
+}
+
 
 const deleteOrder = (req, res, next) => {
-	res.status(201).json({
-		message: 'order delete successfully'
-	})
+	const state = req.params
+
+	const checkOrder = (state) => {
+		Order.findByIdAndDelete(state.id)
+		.exec()
+		.then((result) => {
+				(!result) ? catchError({ code : 'NF'}) : res.status(200).json({ message: 'Your order has been deleted' });
+		})
+		.catch((err) => { res.status(500).json({ error: err }); });
+	}
+
+	//** error function */
+	const catchError = (err) => {
+		const errors = [
+			{ code: 'SWW', message: 'something went wrong' },
+			{ code: 'NF', message: 'order not found' }
+		];
+
+		errors.filter(error => err.code === error.code).map(error => {
+			res.status(500).json({ code: error.code, message: error.message });
+		})
+	}
+
+	checkOrder(state)
 }
 
 router.get('/', getAllOrders);
 router.get('/:id', getOrder);
 router.post('/', addOrders);
 router.delete('/:id', deleteOrder);
+router.patch('/:id', updateOrders);
 
 module.exports = router;

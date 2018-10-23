@@ -10,7 +10,7 @@ const getAllUsers = (req, res, next) => {
     User.find()
     .exec()
     .then((result) => {
-      (result.length <= 0) ? catchError({ code: 'NF' }) : res.status(200).json({ message: 'user found', user: result })
+      (result.length <= 0) ? catchError({ code: 'NF' }) : res.status(200).json({ count: result.length, user: result })
     })
     .catch((err) =>  catchError({ code : 'SWW' }) );
   }
@@ -19,7 +19,7 @@ const getAllUsers = (req, res, next) => {
   const catchError = err => {
     const errors = [
       { code: 'SWW', message: 'something went wrong' },
-      { code: 'NF', message: 'no user found' }
+      { code: 'UNF', message: 'user not found' }
     ];
     errors.filter(error => err.code === error.code).map(error => {
       res.status(500).json({ code: error.code, message: error.message });
@@ -40,7 +40,7 @@ const getOneUser = (req, res, next) => {
     User.findOne({ username: state.username })
       .select('firstname lastname username email')
       .exec()
-      .then((result) => { (!result) ? catchError({ code: 'UNF' }) : res.status(200).json({ message: 'user found', user: result }) })
+      .then((result) => { (!result) ? catchError({ code: 'UNF' }) : res.status(200).json({ user: result }) })
       .catch((err) =>  catchError({ code: 'SWW' })  );
   }
 
@@ -100,7 +100,7 @@ const addUser = (req, res, next) => {
     ];
 
     errors.filter(error => err.code === error.code).map(error => {
-      res.status(200).json({
+      res.status(500).json({
         code: error.code,
         message: error.message
       });
@@ -127,9 +127,9 @@ const deleteUser = (req, res, next) => {
   };
 
   const deleteUser = (state) => {
-    User.deleteOne({ username: state.username })
+    User.findOneAndDelete({ username: state.username })
       .exec()
-      .then((result) => res.status(200).json({ message: 'user deleted', user: result }))
+      .then((result) => res.status(200).json({ message: 'user deleted' }))
       .catch((err) => catchError({ code: 'SWW' }));
   }
 
@@ -142,7 +142,7 @@ const deleteUser = (req, res, next) => {
     ];
 
     errors.filter(error => err.code === error.code).map(error => {
-      res.status(200).json({
+      res.status(500).json({
         code: error.code,
         message: error.message
       });
@@ -165,9 +165,9 @@ const updateUser = (req, res, next) => {
   };
 
   const updateUser = (state) => {
-    User.updateOne({ username: state.username }, { firstname: req.body.firstname, lastname: req.body.lastname, password: req.body.password })
+    User.findOneAndUpdate( { username: state.username } , { firstname: req.body.firstname, lastname: req.body.lastname})
       .exec()
-      .then(result => { res.status(200).json({ message: 'user details updated' }) });
+      .then(result => { res.status(200).json({ message: 'user details updated' , user: result}) });
   };
 
   //** error function */
@@ -180,7 +180,7 @@ const updateUser = (req, res, next) => {
     ];
 
     errors.filter(error => err.code === error.code).map(error => {
-      res.status(200).json({
+      res.status(500).json({
         code: error.code,
         message: error.message
       });
