@@ -1,5 +1,38 @@
 const mongoose = require('mongoose');
 const express = require('express');
+const multer = require('multer');
+const dates = new Date();
+
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, dates.toLocaleString().replace(/:/g, '-') + '-' + file.originalname)
+  }
+})
+
+const fileFilter = (req, file, cb) => {
+  // The function should call `cb` with a boolean
+  // to indicate if the file should be accepted
+  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg' || file.mimetype === 'image/png') {
+    // To accept the file pass `true`, like so:
+    cb(null, true);
+  } else {
+    // To reject this file pass `false`, like so:
+    cb(null, false);
+  }
+}
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 1024 * 1024 * 5 },
+  fileFilter: fileFilter
+});
+
+// const upload = multer({ dest: 'uploads/' });
+
 const Product = require('../models/product');
 const router = express.Router();
 
@@ -7,13 +40,13 @@ const getAllProducts = (req, res, next) => {
 
   const getProducts = () => {
     Product.find()
-    .select('name description price quantity')
+    .select('name productImage description price quantity')
     .exec()
       .then((result) => {
         (!result.length) ? catchError({ code: 'PNF' }) : res.status(200).json({
           count: result.length,
           products: result.map(result => {
-            return { id: result._id, name: result.name, description: result.description, price: result.price, quantity: result.quantity
+            return { id: result._id, name: result.name, productImage: result.productImage, description: result.description, price: result.price, quantity: result.quantity
             }
           })
         })
@@ -45,7 +78,7 @@ const getSingleProduct = (req, res, next) => {
 
   const findProduct = (state) => {
     Product.findById(state.id)
-    .select('name description price quantity')
+    .select('name productIMage description price quantity')
     .exec()
     .then((result) => { (!result) ? catchError({ code: 'NF' }) : getProduct(result) })
     .catch((err) =>  catchError({ code: 'SWW' }) );
@@ -77,7 +110,7 @@ const getSingleProduct = (req, res, next) => {
 
 const addProducts = (req, res, next) => {
   const state = req.body;
-
+  console.log(req.file);
   const checkValidation = (state) => {
     (!state.name || !state.description || !state.price || !state.quantity) ? catchError({ code: 'MII' }) : checkProduct(state)
   }
@@ -94,7 +127,8 @@ const addProducts = (req, res, next) => {
       name: state.name,
       description: state.description,
       price: state.price,
-      quantity: state.quantity
+      quantity: state.quantity,
+      productImage: req.file.path
     })
 
     product.save()
@@ -212,7 +246,7 @@ const deleteProducts = (req, res, next) => {
 
 router.get('/', getAllProducts);
 router.get('/:id', getSingleProduct);
-router.post('/', addProducts);
+router.post('/', upload.single('productImage'), addProducts);
 router.patch('/:id', updateProducts);
 router.delete('/:id', deleteProducts);
 

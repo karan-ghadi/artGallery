@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const express = require('express');
+const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const router = express.Router();
 
@@ -75,19 +76,25 @@ const addUser = (req, res, next) => {
   };
 
   const addUserData = (state) => {
-		const user = new User({
-      _id: new mongoose.Types.ObjectId(),
-      firstname: state.firstname,
-      lastname: state.lastname,
-      username: state.username,
-      password: state.password,
-      email: state.email
-    });
+    bcrypt.hash(state.password, 10, function(err, hash) {
+      if (err) {
+        res.status(200).json({  err: err })
+      } else {
+        const user = new User({
+          _id: new mongoose.Types.ObjectId(),
+          firstname: state.firstname,
+          lastname: state.lastname,
+          username: state.username,
+          password: hash,
+          email: state.email
+        });
 
-    user
-      .save()
-      .then((result) => res.status(200).json({ user: result, message: 'user successfully added' }) )
-			.catch((err) => catchError({ code: 'SWW' }))
+        user
+          .save()
+          .then((result) => res.status(200).json({ user: result, message: 'user successfully added' }) )
+          .catch((err) => catchError({ code: 'SWW' }))
+      }
+    });
   };
 
   //** error function */
