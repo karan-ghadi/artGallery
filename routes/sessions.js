@@ -1,7 +1,10 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+
 const router = express.Router();
+const secretKey = 'PubG';
 
 
 const authenticateUser = (req, res, next) => {
@@ -24,8 +27,15 @@ const authenticateUser = (req, res, next) => {
 						});
 					}
 					if (result) {
+						const token = jwt.sign({
+							email: user.email,
+							username: user.username
+						}, secretKey, {
+							expiresIn: '1h'
+						})
 						res.status(500).json({
-							message: 'Auth Successfull'
+							message: 'Auth Successfull',
+							token: token
 						});
 					}
 				});
