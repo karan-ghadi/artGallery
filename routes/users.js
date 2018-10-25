@@ -197,6 +197,8 @@ const updateUser = (req, res, next) => {
   checkUser(state);
 };
 
+
+
 //**  API ENDPOINTS */
 router.get('/', getAllUsers);
 router.get('/:username', getOneUser);
