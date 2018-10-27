@@ -3,6 +3,7 @@ const express = require('express');
 const User = require('../models/user');
 const Product = require('../models/product');
 const Order = require('../models/order');
+const checkAuth = require('../middleware/check-auth');
 const router = express.Router();
 
 
@@ -199,10 +200,10 @@ const deleteOrder = (req, res, next) => {
 	checkOrder(state)
 }
 
-router.get('/', getAllOrders);
-router.get('/:id', getOrder);
-router.post('/', addOrders);
-router.delete('/:id', deleteOrder);
-router.patch('/:id', updateOrders);
+router.get('/', checkAuth, getAllOrders);
+router.get('/:id', checkAuth, getOrder);
+router.post('/', checkAuth, addOrders);
+router.delete('/:id', checkAuth, deleteOrder);
+router.patch('/:id', checkAuth, updateOrders);
 
 module.exports = router;

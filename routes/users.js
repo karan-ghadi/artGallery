@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const express = require('express');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
+const checkAuth = require('../middleware/check-auth');
 const router = express.Router();
 
 //** get all users */
@@ -202,8 +203,8 @@ const updateUser = (req, res, next) => {
 //**  API ENDPOINTS */
 router.get('/', getAllUsers);
 router.get('/:username', getOneUser);
-router.post('/', addUser);
-router.delete('/:username', deleteUser);
-router.patch('/:username', updateUser);
+router.post('/', checkAuth, addUser);
+router.delete('/:username', checkAuth, deleteUser);
+router.patch('/:username', checkAuth, updateUser);
 
 module.exports = router;

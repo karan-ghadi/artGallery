@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const express = require('express');
 const multer = require('multer');
+const router = express.Router();
+const Product = require('../models/product');
+const checkAuth = require('../middleware/check-auth');
 const dates = new Date();
 
 
@@ -33,8 +36,6 @@ const upload = multer({
 
 // const upload = multer({ dest: 'uploads/' });
 
-const Product = require('../models/product');
-const router = express.Router();
 
 const getAllProducts = (req, res, next) => {
 
@@ -246,9 +247,9 @@ const deleteProducts = (req, res, next) => {
 
 router.get('/', getAllProducts);
 router.get('/:id', getSingleProduct);
-router.post('/', upload.single('productImage'), addProducts);
-router.patch('/:id', updateProducts);
-router.delete('/:id', deleteProducts);
+router.post('/', checkAuth, upload.single('productImage'), addProducts);
+router.patch('/:id', checkAuth, updateProducts);
+router.delete('/:id', checkAuth, deleteProducts);
 
 
 module.exports = router;
